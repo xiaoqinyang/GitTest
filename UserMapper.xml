@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.smbms.mapper.user.UserMapper">
+
+	<!-- 查询用户表记录数 -->
+	<!-- id属性：对应接口的方法名 -->
+	<!-- resultType属性：返回值类型 -->
+	<select id="count" resultType="int">
+		select count(1) as count from smbms_user
+	</select>
+	
+	<!-- 查询用户列表 -->
+	<select id="getUserList" resultType="User">
+		select * from smbms_user
+	</select>
+	
+	<resultMap type="User" id="userList">
+		<result property="id" column="id"/>
+		<result property="userCode" column="userCode"/>
+		<result property="userName" column="userName"/>
+		<result property="userRole" column="userRole"/>
+		<result property="roleName" column="roleName"/>
+	</resultMap>
+	
+	<!-- 查询用户列表（参数：对象入参） -->
+	<select id="getUserListByName" resultMap="userList" parameterType="User">
+		select u.*,r.roleName from smbms_user u ,smbms_role r 
+			where u.userName like CONCAT ('%',#{userName},'%')  
+			and u.userRole = #{userRole} and u.userRole = r.id
+	</select>
+	
+	<!-- 查询用户列表（参数：Map） -->
+	<select id="getUserListByMap" resultType="User" parameterType="Map">
+		select * from smbms_user where userName like CONCAT ('%',#{uName},'%')
+		 and userRole = #{uRole}
+	</select>
+	
+	<insert id="insert" parameterType="User">
+		INSERT INTO `smbms_user`(`userCode`,`userName`,`userPassword`,
+		`gender`,`birthday`,`phone`,`address`,`userRole`,`createdBy`,
+		`creationDate`,`modifyBy`,`modifyDate`)
+			value(#{userCode},#{userName},#{userPassword},#{gender},
+			#{birthday},#{phone},#{address},#{userRole},#{createdBy},
+			#{creationDate},#{modifyBy},#{modifyDate})
+	</insert>
+	
+	<update id="update" parameterType="User">
+		UPDATE `smbms_user` SET `userPassword`=#{userPassword} WHERE id=#{id}
+	</update>
+	
+	<delete id="delete" parameterType="int">
+		DELETE FROM smbms_user WHERE id=#{id}
+	</delete>
+	
+	<resultMap type="User" id="userRoleResult">
+		<result property="id" column="id"/>
+		<result property="userCode" column="userCode"/>
+		<result property="userName" column="userName"/>
+		<result property="userRole" column="userRole"/>
+		<association property="role" javaType="Role" resultMap="roleResult"/>
+	</resultMap>
+	
+	<resultMap type="Role" id="roleResult">
+			<result property="id" column="r_id"/>
+			<result property="roleCode" column="roleCode"/>
+			<result property="roleName" column="roleName"/>
+	</resultMap>
+	
+	<select id="getUserListByRoleId" parameterType="Integer" resultMap="userRoleResult">
+		SELECT u.*,r.id AS r_id,r.`roleCode`,r.`roleName` FROM `smbms_user` u,`smbms_role` r
+		 WHERE u.`userRole` = #{userRole} AND u.`userRole` = r.id
+	</select>
+	add func3
+	<resultMap type="User" id="userAddressResult">
+		<result property="id" column="id"/>
+		<result property="userCode" column="userCode"/>
+		<result property="userName" column="userName"/>
+		<collection property="addressList" ofType="Address">
+			<id property="id" column="a_id"/>
+			<result property="postCode" column="postCode"/>
+			<result property="tel" column="tel"/>
+			<result property="contact" column="contact"/>
+			<result property="addressDase" column="addressDase"/>
+		</collection>
+	</resultMap>
+	
+	<select id="getAddressListByUserId" parameterType="Integer" resultMap="userAddressResult">
+		SELECT u.*,a.id AS a_id,a.`contact`,a.`addressDesc`,a.`tel` FROM `smbms_user` u,`smbms_address` a
+		 WHERE u.id = a.`userId` AND u.id = #{id}
+	</select>
+	
+	<select id="getUserByRoleId_foreach_array" resultMap="userMapByRole">
+		select * from smbms_user where userRole in
+		<foreach collection="array" item="roleIds" open="(" separator="," close=")">
+			#{roleIds}
+		</foreach>
+	</select>
+	
+	<resultMap type="User" id="userMapByRole">
+		<id property="id" column="id"/>
+		<result property="userCode" column="userCode"/>
+		<result property="userName" column="userName"/>
+	</resultMap>
+	
+	<select id="getUserByRoleId_foreach_list" resultMap="userMapByRole">
+		SELECT * FROM `smbms_provider` p,`smbms_bill` b  WHERE p.id = b.`providerId` AND providerId IN
+		<foreach collection="list" item="roleList" open="(" separator="," close=")">
+			#{roleList}
+		</foreach>
+ 	</select>
+ 	
+ 	<!-- 查询用户列表(choose) -->
+ 	<select id="getGetUsers" resultType="User">
+		select * from smbms_user where 1=1
+			<choose>
+				<when test="userName != null and userName !=''">
+					and userName like CONCAT ('%',#{userName},'%')
+				</when>
+				<when test="userCode !=null and userCode !=''">
+					and userCode like CONCAT ('%',#{userCode},'%')
+				</when>
+				<when test="userRole !=null">
+					and userRole=#{userRole}
+				</when>
+				<otherwise>
+					and YEAR(creationDate) = YEAR(#{creationDate})
+				</otherwise>
+			</choose>
+	</select>
+</mapper>
