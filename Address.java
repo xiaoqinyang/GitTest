@@ -22,7 +22,7 @@ public class Address {
     public void setAddressAreaId(String addressAreaId) {
         this.addressAreaId = addressAreaId;
     }
-
+add func2
     public String getAddressName() {
         return addressName;
     }
